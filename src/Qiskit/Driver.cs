@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 using Microsoft.Quantum.Samples.OpenQasm.Measurement;
@@ -25,8 +25,8 @@ namespace Microsoft.Quantum.Samples.Qiskit
             }
             else
             {
-                var factory = new IbmQx4(apiKey); //Using different Factory
-                Console.WriteLine("Hadamard on IBMQx4");
+                var factory = new IbmQ16Melbourne(apiKey); //Using different Factory
+                Console.WriteLine("Hadamard on IBM Q 16 Melbourne");
                 for (int i = 0; i < 1; i++)
                 {
                     var result = MeasureOneQubit.Run(factory).Result;

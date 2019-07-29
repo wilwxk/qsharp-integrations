@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-from IBMQuantumExperience import IBMQuantumExperience
+from qiskit import register, execute, load_qasm_file, get_backend
 import json
 import time
 import sys
@@ -11,47 +11,38 @@ shots = sys.argv[3]
 timeout = 60
 sleeptime = 10
 
-api = IBMQuantumExperience(apikey)
 print("Qiskit API Interface")
-with open('input.txt', 'r') as myfile:
-  qasm = myfile.read()
-print("QASM FILE READ")
-print(qasm)
+print(" Registering API trust")
+url = "https://quantumexperience.ng.bluemix.net/api"
+register(apikey, url)
+print("QASM FILE Read ")
+circuit = load_qasm_file('input.txt')
 print("SENDING TO IBM Quantum Experience")
 print(" IBMQ AT IBM Quantum Experience:")
-
-qasms = [{ 'qasm': qasm}]
-job = api.run_job(qasms, backend=backend, shots=shots, max_credits=3)
-print(job)
-if 'id' in job:
-    jobid = job['id']
-    print(" JobID:", jobid);
-    status = job['status']
-    while status == 'RUNNING' and timeout > 0:
+try:
+    job = execute(circuit, get_backend(backend), shots=shots)
+    while not job.done and timeout > 0:
+        print(job.status)
         time.sleep(sleeptime)
         timeout -= sleeptime
-        job = api.get_job(jobid)
-        status = job['status']
-        if 'infoQueue' in job and 'position' in job['infoQueue']:
-            position = job['infoQueue']['position']
-            print(" Position in Queue", position)
-            if 'estimatedTimeInQueue' in job['infoQueue']:
-                timeQueue = job['infoQueue']['estimatedTimeInQueue']
-            else:
-                timeQueue = position * 60 #Guestimate on minute per job
-            print(" Position in queue:", position)
-            print(" Expected time (minutes) in queue left:", timeQueue/60)
     if timeout > 0:
-        id = job['qasms'][0]['executionId']
-        result = api.get_result_from_execution(id)
+        print(job.status)
+        resultHandler = job.result()
+        print(resultHandler)
+        result = resultHandler.get_data()
         print(result)
         with open('output.txt', 'w') as resultFile:
-           resultFile.write(str(result['measure']))
+            resultFile.write(str(next(iter(result['counts']))))
         sys.exit()
+except SystemExit:
+    raise
+except:
+    print("Failed execution (Probably not enough tokens or canceled execution)")
 print(" Result later than timeout. Going to failover.")
 print(" SIMULATOR AT IBM:")
-ex = api.run_experiment(qasm, backend='ibmqx_qasm_simulator', shots=shots, name='QSharpRun SIM', timeout=15)
+ex = execute(circuit, 'ibmq_qasm_simulator', shots=shots)
+result = ex.result().get_data()
+print(result)
 print("DONE")
-print(ex)
 with open('output.txt', 'w') as resultFile:
-   resultFile.write(str(ex['result']))
+   resultFile.write(str(next(iter(result['counts']))))
