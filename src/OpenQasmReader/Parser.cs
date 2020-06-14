@@ -749,23 +749,37 @@ namespace Microsoft.Quantum.Samples.OpenQasmReader
             var q = token.Current;
             token.MoveNext(); // ;
             bool written = false;
-            if (!x.Equals(ZERO))
-            {
-                written = true;
-                Indent(builder);
-                builder.AppendFormat("Rx({0}, {1});\n", x, q);
-            }
-            if (!y.Equals(ZERO))
-            {
-                written = true;
-                Indent(builder);
-                builder.AppendFormat("Ry({0}, {1});\n", y, q);
-            }
+            // Rz(z), Ry(x), Rz(y)
             if (!z.Equals(ZERO))
             {
                 written = true;
                 Indent(builder);
                 builder.AppendFormat("Rz({0}, {1});\n", z, q);
+            }
+            if (!x.Equals(ZERO))
+            {
+                written = true;
+                Indent(builder);
+                builder.AppendFormat("Ry({0}, {1});\n", x, q);
+            }
+            if (!y.Equals(ZERO))
+            {
+                written = true;
+                Indent(builder);
+                builder.AppendFormat("Rz({0}, {1});\n", y, q);
+            }
+            // fix global phase: R1((y+z)/2), X(), R1((y+z)/2), X()
+            if (!y.Equals(ZERO) || !z.Equals(ZERO))
+            {
+                written = true;
+                Indent(builder);
+                builder.AppendFormat("R1((({0})+({1}))/2.0, {2});\n", x, y, q);
+                Indent(builder);
+                builder.AppendFormat("X({0});\n", q);
+                Indent(builder);
+                builder.AppendFormat("R1((({0})+({1}))/2.0, {2});\n", x, y, q);
+                Indent(builder);
+                builder.AppendFormat("X({0});\n", q);
             }
             if (!written)
             {
